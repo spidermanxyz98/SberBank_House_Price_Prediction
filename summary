@@ -1,0 +1,424 @@
+1st submission: 0.36908   170513submission_randomforest
+		without macro data
+	
+
+	model:RandomForest, n_estimators=500, other params are default
+	score:0.374 +/- 0.05
+
+
+3rd submission: 0.32854
+	170516submission_xgb_fulldata.csv
+	
+	xgb params:
+		eta: 0.02, max_depth: 5, subsample:1, 			colsample_bytree: 1, objective: 'reg:linear'
+		eval_metric: rmse
+	use 20% of train as validation and have eval-rmse=0.47659 
+	number_boost_round=748
+
+things tried after 3rd submission:
+
+	1. find better xgb params using validation set:
+
+		xgb params:
+		eta: 0.01, max_depth: 6, subsample:0.9, 			colsample_bytree: 0.9, objective: 'reg:linear'
+		eval_metric: rmse
+	use 20% of train as validation and have eval-rmse=0.47616
+	number_boost_round=1114
+
+	It looks like eta=0.02 and max_depth=5 is good enough
+
+	
+	2. Join the macro data with house data then try xgb with 20% 
+	
+		xgb params:
+		eta: 0.01, max_depth: 6, subsample:1, 			colsample_bytree: 1, objective: 'reg:linear'
+		eval_metric: rmse
+		
+		eval-rmse=0.457575 num_boost_round=945
+
+		use these params and train all the sample and make the
+		4th submission
+
+4th submission: 0.34556   170516submission_xgb_with_macro_data
+
+
+5th submission: 0.41200   170517submission_randomforest_with_macro_data
+
+		compare sumbmission 1, 3, 4, 5, it looks like adding 			macro data make the prediction worse.
+
+things tried after 5th submission:
+
+	1.use the median to fill Nas
+	
+	2.drop 'child_on_acc_pre_school', 'modern_education_share',
+		'old_education_build_share' in macro
+
+	3.PCA (n_components=30, variance=0.9995) on macro data 
+
+	4.merge macro_pca with house data and run xgb
+
+		xgb_params = {
+    				'eta': 0.01,
+    				'max_depth': 6,
+    				'subsample': 1,
+    				'colsample_bytree': 1,
+    				'objective': 'reg:linear',
+    				'eval_metric': 'rmse',
+    				'silent': 0
+				}
+		validation rmse=0.459054, n_boost_rounds=894
+6th submission: 0.33266  170518submission_xgb_with_30PCA_macro
+
+things tried after 6th submission:
+
+	1.use the 12 'non-linear' features in macro data
+	train xgb using
+
+		xgb_params = {
+    			'eta': 0.02,
+    			'max_depth': 6,
+    			'subsample': 0.8,
+    			'colsample_bytree': 0.8,
+    			'objective': 'reg:linear',
+    			'eval_metric': 'rmse',
+    			'silent': 0
+			}
+	validation-rmse 0.457298 num_boost_rounds=419
+
+	2. Do subsampling to make local CV close to LB
+
+	3. select features based on f_score, set the threshold as 5%
+
+	4. train xbg using the same params in 1 and have the 7-th submission.
+
+7th submission: 0.32088 170519submission_xgb_12features_macro_xgbimportance0.05
+
+things to try:
+		1. different importance threshold
+
+		2. use full macro and importance threshold
+
+		3. tune L2 regularization parameter lambda using 5 fold cv 
+
+		4. substitute Nas into some outliar values
+
+		5. try neuron net
+
+		6. GBRT
+
+try lambdas 
+
+fix xgb_params = {
+    			'eta': 0.02,
+    			'max_depth': 6,
+    			'subsample': 0.8,
+    			'colsample_bytree': 0.8,
+    			'objective': 'reg:linear',
+    			'eval_metric': 'rmse',
+    			'silent': 0
+			}
+labmda=1	0.319397+/-0.00619 num_boost_round=800
+labmda=0.1	0.320629+/-0.00609 num_boost_round=661
+labmda=0.01	0.320744+/-0.00667 num_boost_round=539
+labmda=0.001	0.320463+/-0.00634 num_boost_round=655
+labmda=0.0001	0.320800+/-0.00674 num_boost_round=538
+lambda=10	0.318031+/-0.00668 num_boost_round=870
+labmda=100	0.317481+/-0.00655 num_boost_round=1132
+lambda=1000	0.319384+/-0.00708 num_boost_round=1500
+lambda=500	0.317975+/-0.00677 num_boost_round=1681
+lambda=250	0.317771+/-0.00697 num_boost_round=1218
+lambda=30	0.317608+/-0.00634 num_boost_round=1014
+		 
+Looks like lambda=100 gets the best CV score. Use lambda=100, and decrease the learning rate to 0.01. Decrease learning rate to 0.01 doesn't improve the validation score. Keep using 0.02
+
+8th submission: 0.32111 xgb lambda=100
+
+9th submission: ~0.4	MLP	not working 
+
+
+things tried after 9th submission:
+	1. set importance as 0.01 and do CV again, 0.31696+/-0.006703
+	2. set importance as 0.005 and do CV, 0.317054+/-0.00630
+	3. set importance back to 0.01 and base_score=7, 0.316767+/-0.00649
+
+10th submission: 0.32168 xgb importance threshold=0.001, base_score=7, l		ambda=100
+
+Things to try after 10th submission:
+		1. GBRT 5 fold CV n_estimators: [100, 300, 500, 700] (the higher the better)
+			
+		'mean_test_score': array([ 0.57522757,  0.56379379,  0.54919441,  0.53787802]),
+ 		'mean_train_score': array([ 0.71355906,  0.80916243,  0.86181568,  0.89508768]),
+
+		2. max_leaf_nodes: [4, 5, 6]
+		'mean_score_time': array([ 0.05703101,  0.07469139,  0.07807789]),
+ 		'mean_test_score': array([ 0.5560364 ,  0.56030425,  0.56415655]),
+
+		3. max_leaf_nodes: [7,8,9]
+		'mean_score_time': array([ 0.08392906,  0.0761837 ,  0.0729352 ]),
+ 		'mean_test_score': array([ 0.56721533,  0.56815128,  0.570849  ]),
+		'std_test_score': array([ 0.0696011 ,  0.07224905,  0.07119713]),
+ 		'std_train_score': array([ 0.01268904,  0.01353955,  0.01387253])
+
+11th submission: 0.32353 GBRT n_estimators=300, eta=0.03, max_leaf_nodes=9, subsample=0.8
+
+
+12th submission: 0.31989	the average between GBRT and xgboost results
+
+
+	try getting important features using xgboost wiht all macro data, fill na with -1000
+	importance 0.05,  number of features: 81, validation score: 0.3217
+	importance 0.01,  number of features: 208, validation score: 0.3215
+
+
+13th submission: ~0.34		use all the macro data and 0.01 importance, fill na with -1000
+
+
+
+#######################################
+05/23 and 05/24
+Look at better ways to deal with Nas:
+
+	there are 25 features which has more than 10% nas and f_score is higher than 0.01 of the highest score.
+
+	fix some outliars in 'life_sq', 'kitchen_sq'
+	1. the number of feautures: 450 (without macro data)
+		train xgboost (number_boost_rounds=915)
+
+15th submission: 0.32312, 170524submission_xgb_no_macro_cleandata
+
+
+	set importance threshold as 0.01 and get 203 features
+16th submission: 0.32179	
+	
+
+	set importance threshod as 0.03 and get 103 features
+17th submission: 0.32172
+	
+	
+	with 12 macro, set importance 0.03 and get 131 features
+18th submission: 0.32097
+
+
+	with 12 macro, set importance 0.03 train GBRT, average with xgb
+19th submission: 0.31945
+
+
+########################################
+05/25
+Add some new feautures: 'month_year_count', 'week_year_count', 'month',
+'day of week', 'relative_floor', 'relative_life_sq', 'ratio_preschool',
+'ratio_young'
+
+1. use xgboost to determine the number of iterations 988
+
+2. train xgboost using 988 and find feature with importance higher than 0.03 (133)
+
+3. cross validation with 133 features, 1103 number of iteration:
+   score: 0.316342+/-0.006523
+
+20th submission 0.32063
+
+
+train GBRT using the same data then average with xgboost 
+
+21th submission 0.31906
+
+
+Do not set the threshold and do CV with xgboost: 0.316775 +/- 0.006461
+
+22th submission 0.32161
+
+
+
+train GBRT and average with xgboost
+
+23th submission 0.31973
+
+
+
+try all training data without subsampling.
+
+	still set the importance threshold as 0.03, and got 142 	features
+
+	do CV using these 142 features, score:0.457819 +/-0.004546
+
+
+24th submission 0.32688
+
+#############################################
+05/27
+
+
+Random forest parameter search:
+
+GridSearchCV(cv=5, error_score='raise',
+       estimator=RandomForestRegressor(bootstrap=True, criterion='mse', max_depth=None,
+           max_features='auto', max_leaf_nodes=None,
+           min_impurity_split=1e-07, min_samples_leaf=1,
+           min_samples_split=2, min_weight_fraction_leaf=0.0,
+           n_estimators=600, n_jobs=-1, oob_score=False, random_state=None,
+           verbose=0, warm_start=False),
+       fit_params={}, iid=True, n_jobs=-1,
+       param_grid={'max_depth': [4, 5, 6, 7], 'max_features': ('auto', 'sqrt', 15, 20, 25)},
+       pre_dispatch='2*n_jobs', refit=True, return_train_score=True,
+       scoring=None, verbose=3)
+
+'mean_test_score': array([ 0.48196105,  0.35112857,  0.32054023,  0.34580742,  0.36915898,
+         0.51064328,  0.39338345,  0.36351053,  0.39168866,  0.41290201,
+         0.52968844,  0.42615037,  0.39218957,  0.42281568,  0.44288404,
+         0.53942962,  0.45316943,  0.42370839,  0.44946993,  0.47005932]),
+ 'mean_train_score': array([ 0.51060038,  0.38270937,  0.35347474,  0.37851342,  0.40027412,
+         0.55046625,  0.43148424,  0.40259425,  0.42986788,  0.45076433,
+         0.58644922,  0.47422944,  0.44204936,  0.47060513,  0.49068247,
+         0.62105618,  0.51608824,  0.48571058,  0.5126441 ,  0.53254936]),
+
+'params': ({'max_depth': 4, 'max_features': 'auto'},
+  {'max_depth': 4, 'max_features': 'sqrt'},
+  {'max_depth': 4, 'max_features': 15},
+  {'max_depth': 4, 'max_features': 20},
+  {'max_depth': 4, 'max_features': 25},
+  {'max_depth': 5, 'max_features': 'auto'},
+  {'max_depth': 5, 'max_features': 'sqrt'},
+  {'max_depth': 5, 'max_features': 15},
+  {'max_depth': 5, 'max_features': 20},
+  {'max_depth': 5, 'max_features': 25},
+  {'max_depth': 6, 'max_features': 'auto'},
+  {'max_depth': 6, 'max_features': 'sqrt'},
+  {'max_depth': 6, 'max_features': 15},
+  {'max_depth': 6, 'max_features': 20},
+  {'max_depth': 6, 'max_features': 25},
+  {'max_depth': 7, 'max_features': 'auto'},
+  {'max_depth': 7, 'max_features': 'sqrt'},
+  {'max_depth': 7, 'max_features': 15},
+  {'max_depth': 7, 'max_features': 20},
+  {'max_depth': 7, 'max_features': 25}),
+ 'rank_test_score': array([ 4, 18, 20, 19, 16,  3, 13, 17, 15, 12,  2,  9, 14, 11,  8,  1,  6,
+        10,  7,  5], dtype=int32),
+
+'std_test_score': array([ 0.07362278,  0.07386465,  0.07022181,  0.07476741,  0.07469644,
+         0.07730574,  0.07538497,  0.07536081,  0.07753556,  0.08119615,
+         0.07747401,  0.07859563,  0.07706431,  0.07673628,  0.07897705,
+         0.07768659,  0.08043902,  0.08004082,  0.08244407,  0.07856577]),
+ 'std_train_score': array([ 0.01600847,  0.01450171,  0.01472342,  0.01291596,  0.01348694,
+         0.01471369,  0.01573688,  0.01417467,  0.01400667,  0.01320426,
+         0.01403313,  0.0141463 ,  0.01376612,  0.01539083,  0.01457166,
+         0.01298368,  0.01352458,  0.01235527,  0.01149027,  0.01520029])}
+
+Try depth 8, 9, 10 with max_features='auto'
+
+'mean_test_score': array([ 0.54633563,  0.55083001,  0.5540494 ]),
+ 'mean_train_score': array([ 0.65573326,  0.69000054,  0.72236427]),
+
+'params': ({'max_depth': 8}, {'max_depth': 9}, {'max_depth': 10}),
+'rank_test_score': array([3, 2, 1], dtype=int32),
+
+std_test_score': array([ 0.07770599,  0.07741924,  0.07677539]),
+ 'std_train_score': array([ 0.01173269,  0.01058665,  0.00929385])}
+
+
+%%%%%%%%%%%%%%%%%%Best RF Params%%%%%%%%%%%%%%%%%%
+max_depth=10, subsample=0.9, max_features='auto'
+
+5 fold CV score ~0.55 +/- 0.07
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+submission score:0.33418
+
+%%%%%%%%%%%%%%%%%%Best GBRT Params%%%%%%%%%%%%%%%%
+GradientBoostingRegressor(alpha=0.9, criterion='friedman_mse', init=None,
+             learning_rate=0.03, loss='ls', max_depth=3,
+             max_features='auto', max_leaf_nodes=10,
+             min_impurity_split=1e-07, min_samples_leaf=1,
+             min_samples_split=2, min_weight_fraction_leaf=0.0,
+             n_estimators=300, presort='auto', random_state=7,
+             subsample=0.9, verbose=1, warm_start=False)
+
+5 fold CV score ~0.57 +/- 0.07
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+submission score: 0.32225
+
+
+RF xgb and GBRT average:
+
+submission score: 0.32132
+
+
+xgb and GBRT average:
+
+submission score: 0.31935
+
+
+0.4xgb, 0.4GBRT and 0.2rf
+
+submission score: 0.32019
+
+
+#############################################
+05/27/2017
+
+try different importance threshold for rf:
+
+threshold: 0.01 ->  14 features (much less than xgb)
+5 fold CV 0.55 +/- 0.075
+
+threshold: 0.001 ->  174 features
+	0.55 +/- 0.08 
+
+threshold: 0.03 ->  4 features
+	0.53 +/- 0.07
+
+
+
+try different threshold for GBRT:
+
+threshold 0.01 ->  135 features
+5 fold cv    0.585 +/- 0.073
+
+
+threshold 0.03 ->  52 features
+5 fold cv    0.5805 +/- 0.073
+
+
+#################################################
+05/29
+
+linear regression with rf, xgb, GBRT 
+
+submission score ~ 0.34
+
+
+try split data with whether life_sq is Na
+
+train xgb:
+	feature_importance 0.03 number of features 130
+	with life_sq  0.352322 / 0.007322  (946 rounds)
+	
+	feature_importance 0.03 number of features 52
+	without life_sq 0.103284 / 0.008046 (2818 rounds)
+
+
+################################################
+05/30
+Things might be worth tring:
+	1. use classification to deal with 1m and 2m data
+	give 1m and 2m and others labels. train a classifier then force the test data to be 1m and 2m (Not working)
+
+Modify Reynaldo's code (total 289 features):
+	1. xgb params:
+			eta: 0.02, max_depth: 6, subsample: 0.8
+			colsample_bytree: 0.8. lambda:100
+	5 fold cv result 950 rounds: 
+	train-rmse:1.58107e+06+6665.49	test-rmse:2.59465e+06+174291
+	
+	importance_rate=0.03 and get 74 features use these features redo CV
+	5 fold cv results 900 rounds:
+	train-rmse:1.60364e+06+7410.63	test-rmse:2.60574e+06+184043
+
+	importance_rate=0.01 and get 155 features:
+	5 fold cv results 900 rounds:
+	train-rmse:1.60074e+06+11639	test-rmse:2.5832e+06+174210
+
+	importance_rate=0.005 and get 214 features:
+	5 fold cv results 
+
+			
+
