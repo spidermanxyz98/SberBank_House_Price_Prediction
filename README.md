@@ -25,7 +25,7 @@ Once an XGB model is trained, it also outputs the importance of each feature. Us
 2. Random Forest (RF) and Gradient Boosting Regression Tree (GBRT):
 5-fold cross validation and grid search were used to determine the number of trees, bootstrap strategies and the criteria of tree-splitting (random forest).
 
-3. Ensemble of the Base Models
+3. Ensemble of the Base Models:
 Two ways to make an ensemble out of the base models (XGB, RF and GBRT) were performed.
       A. Doing a simple average over all the base models
       B. A ridge linear model is trained on the outputs of the base models. The final prediction is done using the linear model.
