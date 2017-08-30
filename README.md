@@ -20,10 +20,9 @@ Model Training:
 
 1. XGBoost (XGB):
 XGB is one of the most popular and successful tree based models in Kaggle competitions. Sometimes, training the model with default hyperparameters could give reasonable results. However, fine tuning the hyperparameters to improve the model is not trivial. Tree-based models tend to overfit the training data. In order to decrease the variance of our model, 5-fold cross validations were performed to choose the correct bootstrap and regularization hyperparameters.
-
 Once an XGB model is trained, it also outputs the importance of each feature. Using this as a feature selection methods turned out to make our model better. (This can be done by first training a preliminary model with all the features and get the relative importance of each feature. Then the final model is trained using features whose importance is greater than the threshold. The threshold is determined by grid search with cross validation.). 
 
-2. Random Forest (RF) and Gradient Boosting Regression Tree (GBRT)
+2. Random Forest (RF) and Gradient Boosting Regression Tree (GBRT):
 5-fold cross validation and grid search were used to determine the number of trees, bootstrap strategies and the criteria of tree-splitting (random forest).
 
 3. Ensemble of the Base Models
