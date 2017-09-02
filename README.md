@@ -27,5 +27,5 @@ Once an XGB model is trained, it also outputs the importance of each feature. Us
 
 3. Ensemble of the Base Models:
 Two ways to make an ensemble out of the base models (XGB, RF and GBRT) were performed.
-      A. Doing a simple average over all the base models
+      A. Doing a simple average over all the base models.
       B. A ridge linear model is trained on the outputs of the base models. The final prediction is done using the linear model.
